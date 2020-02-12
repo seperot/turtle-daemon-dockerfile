@@ -5,6 +5,7 @@ RUN adduser -D -g '' appuser
 
 RUN curl https://api.github.com/repos/turtlecoin/turtlecoin/tags -O
 RUN TAGS="(cat tags | grep -i ["name"] | grep -oh -P '(v\d+.\d+.\d+)')"
+run echo $TAGS
 RUN curl https://github.com/turtlecoin/turtlecoin/releases/download/"$TAGS"/turtlecoin-linux-"$TAGS"-tar.gz
 RUN tar -C /turtlecoin -zxvf turtlecoin-linux-"$TAGS"-tar.gz
 RUN cd /turtlecoin
