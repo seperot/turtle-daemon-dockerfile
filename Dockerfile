@@ -1,18 +1,14 @@
 FROM alpine:latest AS builder
 
-RUN apk update && apk add curl && apk add --no-cache --upgrade grep
+RUN apk update && apk add curl && apk add --no-cache --upgrade grep && apk add --no-cache --upgrade bash
 RUN adduser -D -g '' appuser
 
-RUN curl https://api.github.com/repos/turtlecoin/turtlecoin/tags -O
-RUN mkdir turtlecoin
-RUN echo $'TAGS=`cat tags | grep -m1 -i ["name"] | grep -oh -P (v\d+.\d+.\d+)` \n\ curl https://github.com/turtlecoin/turtlecoin/releases/download/"$TAGS"/turtlecoin-linux-"$TAGS"-tar.gz \n\ mkdir turtlecoin && tar -C /turtlecoin -zxvf turtlecoin-linux-"$TAGS"-tar.gz'
-RUN cd turtlecoin
-RUN curl https://blockapi.turtlepay.io/checkpointsIPFSHash
-RUN echo $'HASH=`cat checkpointsIPFSHash | grep -i ["hash"] | grep -oh -P ([A-Z])\w+)` \n\ curl https://cloudflare-ipfs.com/ipfs/"$HASH"' > checkpoint.csv
-RUN cd turtlecoin | ls
+RUN curl -L https://github.com/turtlecoin/turtlecoin/releases/download/v0.22.0/turtlecoin-linux-v0.22.0.tar.gz > file.tar.gz
+RUN tar -zxvf file.tar.gz
+RUN curl -L https://cloudflare-ipfs.com/ipfs/QmW6a6VvX43vfJNktHs9ycZJtCqLJfZLwHWsxQmF7EyiV6 > turtlecoin-v0.22.0/checkpoint.csv
 
 FROM scratch
 COPY --from=builder /etc/ssl/certs /etc/ssl/certs
 COPY --from=builder /etc/passwd /etc/passwd
 USER appuser
-ENTRYPOINT ["/turtlecoin"] 
+ENTRYPOINT ["/turtlecoin"]
