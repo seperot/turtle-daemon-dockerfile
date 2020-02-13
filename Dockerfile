@@ -1,14 +1,20 @@
-FROM alpine:latest AS builder
+FROM ubuntu:latest AS builder
 
-RUN apk update && apk add curl && apk add --no-cache --upgrade grep && apk add --no-cache --upgrade bash
-RUN adduser -D -g '' appuser
+RUN apt-get update && apt-get -y upgrade && apt-get -y install curl && rm -rf /var/cache/apk/*
+WORKDIR /app
+COPY ./docker-entrypoint.sh /usr/local/bin
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN ln -s /usr/local/bin/docker-entrypoint.sh /
 
-RUN curl -L https://github.com/turtlecoin/turtlecoin/releases/download/v0.22.0/turtlecoin-linux-v0.22.0.tar.gz > file.tar.gz
-RUN tar -zxvf file.tar.gz
-RUN curl -L https://cloudflare-ipfs.com/ipfs/QmW6a6VvX43vfJNktHs9ycZJtCqLJfZLwHWsxQmF7EyiV6 > turtlecoin-v0.22.0/checkpoint.csv
+ARG TAGS=v0.22.0
+RUN curl -L https://github.com/turtlecoin/turtlecoin/releases/download/"$TAGS"/turtlecoin-linux-"$TAGS".tar.gz > file.tar.gz
+run mkdir turtlecoin
+RUN tar -zxvf file.tar.gz -C turtlecoin
+RUN rm file.tar.gz
+ARG CHECKPOINT=QmSRrivVW1gArTE6S4Rxh66MAkvUK7UNscaMn4KwEjcW9x
+RUN curl -L https://ipfs.io/ipfs/"$CHECKPOINT" > turtlecoin/turtlecoin-"$TAGS"/checkpoint.csv
+RUN ls
 
-FROM scratch
-COPY --from=builder /etc/ssl/certs /etc/ssl/certs
-COPY --from=builder /etc/passwd /etc/passwd
-USER appuser
-ENTRYPOINT ["/turtlecoin"]
+RUN mv turtlecoin/turtlecoin-"$TAGS" turtlecoin/main
+
+ENTRYPOINT ["docker-entrypoint.sh"]
